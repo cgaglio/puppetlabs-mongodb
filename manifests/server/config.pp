@@ -91,7 +91,19 @@ class mongodb::server::config {
     } else {
       $cfg_content = template('mongodb/mongodb.conf.erb')
     }
-
+    group { $group :
+      name   => $group,
+      ensure => present,
+      system => true,
+    }
+    user { $user :
+      name       => $user,
+      shell      => '/bin/false',
+      system     => true,
+      gid        => $group,
+      managehome => false
+    }
+    
     file { $config:
       content => $cfg_content,
       owner   => 'root',
@@ -105,7 +117,7 @@ class mongodb::server::config {
       mode    => '0755',
       owner   => $user,
       group   => $group,
-      require => File[$config]
+      require => [File[$config],User[$user],Group[$group]]
     }
   } else {
     file { $dbpath:
@@ -114,6 +126,12 @@ class mongodb::server::config {
       backup => false,
     }
     file { $config:
+      ensure => absent
+    }
+    group { $group :
+      ensure => absent,
+    }
+    user { $user :
       ensure => absent
     }
   }
